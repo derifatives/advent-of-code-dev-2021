@@ -1,6 +1,3 @@
-{-# OPTIONS_GHC -Wno-unused-imports   #-}
-{-# OPTIONS_GHC -Wno-unused-top-binds #-}
-
 -- |
 -- Module      : AOC.Challenge.Day01
 -- License     : BSD3
@@ -22,22 +19,33 @@
 --     will recommend what should go in place of the underscores.
 
 module AOC.Challenge.Day01 (
-    -- day01a
-  -- , day01b
+  day01a
+  , day01b
   ) where
 
-import           AOC.Prelude
+-- import           AOC.Prelude
+import AOC.Solver ((:~>)(MkSol), sParse, sShow, sSolve)
+import Data.List (tails)
 
-day01a :: _ :~> _
+makeInteger :: String -> Int
+makeInteger = read
+
+decreases :: [Int] -> Int
+decreases is = length $ filter (uncurry (<)) (zip is (drop 1 is))
+
+slidingWindows :: [Int] -> Int -> [[Int]]
+slidingWindows is n = filter (\l -> length l == n) $ map (take n) $ tails is
+
+day01a :: [Int] :~> Int
 day01a = MkSol
-    { sParse = Just
+    { sParse = \i -> Just $ map makeInteger $ lines i
     , sShow  = show
-    , sSolve = Just
+    , sSolve = \i -> Just $ decreases i
     }
 
-day01b :: _ :~> _
+day01b :: [Int] :~> Int
 day01b = MkSol
-    { sParse = Just
+    { sParse = \i -> Just $ map makeInteger $ lines i
     , sShow  = show
-    , sSolve = Just
+    , sSolve = \i -> Just $ decreases $ map sum $ slidingWindows i 3
     }
