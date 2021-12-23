@@ -33,19 +33,19 @@ makeInteger = read
 decreases :: [Int] -> Int
 decreases is = length $ filter (uncurry (<)) (zip is (drop 1 is))
 
-slidingWindows :: [Int] -> Int -> [[Int]]
-slidingWindows is n = filter (\l -> length l == n) $ map (take n) $ tails is
+slidingWindows :: Int -> [Int] -> [[Int]]
+slidingWindows n is = filter (\l -> length l == n) $ map (take n) $ tails is
 
 day01a :: [Int] :~> Int
 day01a = MkSol
-    { sParse = \i -> Just $ map makeInteger $ lines i
+    { sParse = Just .  map makeInteger . lines
     , sShow  = show
-    , sSolve = \i -> Just $ decreases i
+    , sSolve = Just . decreases
     }
 
 day01b :: [Int] :~> Int
 day01b = MkSol
-    { sParse = \i -> Just $ map makeInteger $ lines i
+    { sParse = Just . map makeInteger . lines 
     , sShow  = show
-    , sSolve = \i -> Just $ decreases $ map sum $ slidingWindows i 3
+    , sSolve = Just . decreases . map sum . slidingWindows 3
     }
