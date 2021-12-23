@@ -51,16 +51,22 @@ updatePosB (Pos h d a) (Forward n) = Pos (h+n) (d+a*n) a
 posProduct :: Pos -> Int
 posProduct (Pos h d _) = h * d
 
+parser :: String -> Maybe [Inst]
+parser = Just . map (parseInst . words) . lines
+
+initSol :: Pos
+initSol = Pos 0 0 0
+
 day02a :: [Inst] :~> Pos
 day02a = MkSol
-    { sParse = Just . map (parseInst . words) . lines
+    { sParse = parser
     , sShow  = show . posProduct
-    , sSolve = Just . foldl updatePosA (Pos 0 0 0)
+    , sSolve = Just . foldl updatePosA initSol
     }
 
 day02b :: [Inst] :~> Pos
 day02b = MkSol
-    { sParse = Just . map (parseInst . words) . lines
+    { sParse = parser
     , sShow  = show . posProduct
-    , sSolve = Just . foldl updatePosB (Pos 0 0 0)
+    , sSolve = Just . foldl updatePosB initSol
     }
