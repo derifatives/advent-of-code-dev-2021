@@ -24,8 +24,11 @@ module AOC.Challenge.Day03 (
   ) where
 
 import AOC.Solver ((:~>)(MkSol), sParse, sShow, sSolve)
+import Control.Monad(join,)
 import Data.Char(digitToInt)
+import Data.List(transpose)
 import Data.Map as M(Map, fromListWith, (!))
+import Data.Bifunctor(bimap)
 
 fromBinary :: [Int] -> Int
 fromBinary = foldl (\t d -> 2*t + d) 0
@@ -33,36 +36,34 @@ fromBinary = foldl (\t d -> 2*t + d) 0
 counts :: (Ord a) => [a] -> Map a Int
 counts = M.fromListWith (+) . (flip zip) (repeat 1)
 
-mostCommon :: [String] -> Int -> Char
-mostCommon ls pos =
-  let cs = counts $ map (!! pos) ls in
+mostCommon :: String -> Char
+mostCommon s = 
+  let cs = counts s in
     if (cs M.! '1') >= (cs M.! '0') then '1' else '0'
+  
+leastCommon :: String -> Char
+leastCommon s = if mostCommon s == '1' then '0' else '1'
 
-leastCommon :: [String] -> Int -> Char
-leastCommon ls pos = if mostCommon ls pos == '1' then '0' else '1'
-
-getCommonishFiltering :: [String] -> ([String] -> Int -> Char) -> Int -> String
-getCommonishFiltering (l:[]) _ _ = l
-getCommonishFiltering ls commonProc pos =
-  let keep = commonProc ls pos in
-    getCommonishFiltering (filter (\l -> (l !! pos) == keep) ls) commonProc (pos + 1)
-
+commonFiltering :: (String -> Char) -> Int -> [String] -> String
+commonFiltering _ _ (l:[]) = l
+commonFiltering commonProc pos ls =
+  let atPos = map (!! pos) ls
+      keep = commonProc atPos in
+    commonFiltering commonProc (pos + 1) (map fst $ filter ((==) keep . snd) $ zip ls atPos)
+  
 readBinaryInt :: String -> Int
 readBinaryInt = fromBinary . map digitToInt
-  
+
 day03a :: [String] :~> (Int, Int)
 day03a = MkSol
     { sParse = Just . lines
     , sShow  = show . uncurry (*)
-    , sSolve = \ls -> let ns = [0..(length(head ls) - 1)] in
-        Just $ (readBinaryInt $ map (mostCommon ls) ns,
-                 readBinaryInt $ map (leastCommon ls) ns)
+    , sSolve = Just . join bimap readBinaryInt . ((,) <$> (map mostCommon) <*> (map leastCommon)) . transpose
     }
 
 day03b :: [String] :~> (Int, Int)
 day03b = MkSol
     { sParse = Just . lines
     , sShow  = show . uncurry (*)
-    , sSolve = \ls -> Just $ (readBinaryInt $ getCommonishFiltering ls mostCommon 0,
-                              readBinaryInt $ getCommonishFiltering ls leastCommon 0)
+    , sSolve = Just . join bimap readBinaryInt . ((,) <$> (commonFiltering mostCommon 0) <*> (commonFiltering leastCommon 0))
     }
