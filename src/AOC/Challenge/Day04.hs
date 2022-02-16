@@ -27,12 +27,13 @@ module AOC.Challenge.Day04 (
   ) where
 
 import AOC.Prelude
+import Data.Functor
 import Data.List(find, partition)
 import Data.List.Split(chunksOf, splitOn)
 import Data.Array(Array, listArray, assocs, elems, (//), (!))
 import Data.Maybe(isJust)
 
-newtype Card = Card (Array (Int, Int) (Maybe Int)) deriving stock (Show)
+type Card = Array (Int, Int) (Maybe Int)
 
 parser :: String -> Maybe ([Int], [Card])
 parser input =
@@ -42,21 +43,18 @@ parser input =
   in Just (numbers, cards)
 
 parseCard :: [String] -> Card
-parseCard lls = Card $ listArray ((0, 0), (4, 4)) (map (Just . read) (concat (map words lls)))
+parseCard lls = listArray ((0, 0), (4, 4)) (map (Just . read) (concat (map words lls)))
 
 markCard :: Int -> Card -> Card
-markCard n (Card arr) =
-  let a = find ((== (Just n)) . snd) (assocs arr)
-  in case a of
-    Just ((r, c), _)  -> Card (arr // [((r, c), Nothing)])
-    _                 -> Card arr
+markCard n card =
+  fmap (\m -> if (m == (Just n)) then Nothing else m) card
 
 adder :: Maybe Int -> Int -> Int
 adder (Just i) n = i + n
 adder Nothing n = n
 
 cardSum :: Card -> Int
-cardSum (Card a) = foldr adder 0 (elems a)
+cardSum c = foldr adder 0 (elems c)
 
 cardFinished :: Card -> Bool
 cardFinished card =
@@ -74,8 +72,8 @@ cardFinished card =
   
 sequenceMarked :: (Int, Int) -> (Int, Int) -> Int -> Card -> Bool
 sequenceMarked _ _ 0 _ = True
-sequenceMarked (cr, cc) (ofr, ofc) n c@(Card a) =
-  if isJust (a ! (cr, cc)) then False else
+sequenceMarked (cr, cc) (ofr, ofc) n c =
+  if isJust (c ! (cr, cc)) then False else
     sequenceMarked (cr + ofr, cc + ofc) (ofr, ofc) (n - 1) c
 
 playGame :: [Int] -> [Card] -> (Int, Card)
