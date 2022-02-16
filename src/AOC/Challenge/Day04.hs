@@ -78,27 +78,26 @@ sequenceMarked (cr, cc) (ofr, ofc) n c@(Card a) =
   if isJust (a ! (cr, cc)) then False else
     sequenceMarked (cr + ofr, cc + ofc) (ofr, ofc) (n - 1) c
 
-playGame :: [Int] -> [Card] -> Maybe (Int, Card)
+playGame :: [Int] -> [Card] -> (Int, Card)
 playGame (n:ns) cards =
   let marked = map (markCard n) cards
       winner = find cardFinished marked
   in case winner of
-    Just c  -> Just (n, c)
+    Just c  -> (n, c)
     Nothing -> playGame ns marked
-playGame _ _ = Nothing
+playGame _ _ = error "Unexpected empty list."
 
-playToLose :: [Int] -> [Card] -> Maybe (Int, Card)
+playToLose :: [Int] -> [Card] -> (Int, Card)
 playToLose (n:ns) cards =
   let marked = map (markCard n) cards
       (done, undone) = partition cardFinished marked
   in case undone of
-    [] -> Just (n, head done)
+    [] -> (n, head done)
     ss -> playToLose ns ss
-playToLose _ _ = Nothing
+playToLose _ _ = error "Unexpected empty list."
 
-score :: Maybe (Int, Card) -> Maybe Int
-score Nothing = Nothing
-score (Just (n, c)) = Just (n * cardSum c)
+score :: (Int, Card) -> Maybe Int
+score (n, c) = Just (n * cardSum c)
 
 day04a :: ([Int], [Card]) :~> Int
 day04a = MkSol
