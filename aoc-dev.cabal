@@ -27,6 +27,7 @@ common common-options
                      , Cabal
                      , aeson
                      , ansi-terminal
+                     , array
                      , base >=4.7 && <5
                      , bytestring
                      , constraints
@@ -49,6 +50,7 @@ common common-options
                      , pandoc
                      , parser-combinators
                      , profunctors
+                     , split
                      , tagsoup
                      , template-haskell
                      , text
