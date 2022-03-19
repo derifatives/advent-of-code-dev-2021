@@ -24,8 +24,7 @@ insert :: Ord a => a -> (CountMap a) -> (CountMap a)
 insert a = Map.insertWith (+) a 1
 
 parser :: String -> Maybe FishMap
-parser input = 
-  Just $ foldr insert Map.empty (map read (splitOn "," input))
+parser = Just . foldr insert Map.empty . map read . splitOn ","
 
 runOneDay :: FishMap -> FishMap
 runOneDay fm = foldr (\k -> Map.insert k (newCount k)) Map.empty [0..8]
