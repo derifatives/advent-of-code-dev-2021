@@ -1,4 +1,3 @@
--- |
 -- Module      : AOC.Challenge.Day05
 -- License     : BSD3
 --
@@ -26,21 +25,15 @@ type VentMap = CountMap Pos
 insert :: Ord a => (CountMap a) -> a -> (CountMap a)
 insert cm a = Map.insertWith (+) a 1 cm
 
-parser :: String -> Maybe ([Vent])
-parser input =
-  let lls = lines input
-      poslines = map (splitOn " -> ") lls
-      vents = map readVent poslines
-  in Just vents
-  where readVent posline =
-          let poses = map parsePos posline
-          in (head poses, head (tail poses))
-          
-parsePos :: String -> Pos
-parsePos p =
-  let ns = map read (splitOn "," p)
-  in (head ns, head (tail ns))
+toTuple :: [a] -> (a, a)
+toTuple [a1, a2] = (a1, a2)
+toTuple _ = error "Not a 2-list"
 
+parser :: String -> Maybe ([Vent])
+parser = Just . map (readVent . splitOn "->") . lines
+  where readVent = toTuple . map parsePos
+        parsePos = toTuple . map read . splitOn ","
+    
 notDiagonal :: Vent -> Bool
 notDiagonal ((x1, y1), (x2, y2)) = x1 == x2 || y1 == y2
 
