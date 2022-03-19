@@ -20,12 +20,12 @@ import qualified Data.Map as Map
 type CountMap a = Map.Map a Integer
 type FishMap = CountMap Integer
 
-insert :: Ord a => (CountMap a) -> a -> (CountMap a)
-insert cm a = Map.insertWith (+) a 1 cm
+insert :: Ord a => a -> (CountMap a) -> (CountMap a)
+insert a = Map.insertWith (+) a 1
 
 parser :: String -> Maybe FishMap
 parser input = 
-  Just $ foldr (flip insert) Map.empty (map read (splitOn "," input))
+  Just $ foldr insert Map.empty (map read (splitOn "," input))
 
 runOneDay :: FishMap -> FishMap
 runOneDay fm = foldr (\k -> Map.insert k (newCount k)) Map.empty [0..8]
