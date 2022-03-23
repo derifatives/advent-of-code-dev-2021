@@ -50,6 +50,7 @@ common common-options
                      , pandoc
                      , parser-combinators
                      , profunctors
+                     , sort
                      , split
                      , tagsoup
                      , template-haskell
