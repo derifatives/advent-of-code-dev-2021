@@ -12,10 +12,10 @@ module AOC.Challenge.Day08 (
   , day08b
   ) where
 
-import           AOC.Prelude
-import Data.List(permutations)
+import AOC.Solver ((:~>)(MkSol), sParse, sShow, sSolve)
+import Data.List(find, permutations)
 import Data.List.Split(splitOn)
--- import Data.Maybe(fromJust)
+import Data.Maybe(fromJust)
 import Data.Sort(sort)
 
 toTuple :: [a] -> (a, a)
