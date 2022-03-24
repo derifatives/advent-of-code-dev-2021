@@ -22,22 +22,53 @@
 --     will recommend what should go in place of the underscores.
 
 module AOC.Challenge.Day10 (
-    -- day10a
-  -- , day10b
+  day10a
+  , day10b
   ) where
 
 import           AOC.Prelude
+import Data.List(sort)
 
-day10a :: _ :~> _
+openToClose :: [(Char, Char)]
+openToClose = [('(', ')'), ('[', ']'), ('{', '}'), ('<', '>')]
+
+safeLookup :: Eq a => a -> [(a, b)] -> b
+safeLookup = (fromJust .) . lookup
+
+safeCloseChar :: Char -> Char
+safeCloseChar c = safeLookup c openToClose
+
+parseLine :: String -> (String, Maybe Int)
+parseLine s = parseLine' s [] where
+  parseLine' [] st    = (st, Nothing)
+  parseLine' (x:xs) st =
+    if elem x (map fst openToClose)
+    then parseLine' xs (x:st)
+    else if st == [] || safeCloseChar (head st) /= x
+         then (st, lookup x [(')', 3), (']', 57), ('}', 1197), ('>', 25137)])
+         else parseLine' xs (tail st)
+
+scoreRemainder :: Int -> String -> Int
+scoreRemainder s []     = s
+scoreRemainder s (c:cs) =
+  scoreRemainder (5*s + safeLookup (safeCloseChar c) scores) cs
+  where scores = [(')', 1), (']', 2), ('}', 3), ('>', 4)]
+
+median :: Ord a => [a] -> a
+median as =
+  let sorted = sort as
+  in sorted !! (length as `div` 2)
+
+day10a :: [String] :~> Int
 day10a = MkSol
-    { sParse = Just
+    { sParse = Just . lines
     , sShow  = show
-    , sSolve = Just
+    , sSolve = Just . sum . map (fromJust . snd) . filter (isJust . snd) . map parseLine
     }
 
-day10b :: _ :~> _
+day10b :: [String] :~> Int
 day10b = MkSol
-    { sParse = Just
+    { sParse = Just . lines
     , sShow  = show
-    , sSolve = Just
+    , sSolve = Just . median . map ((scoreRemainder 0) . fst) . filter (isNothing . snd) . map parseLine
     }
