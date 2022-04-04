@@ -16,8 +16,8 @@ import AOC.Solver ((:~>)(MkSol), sParse, sShow, sSolve)
 import Control.Arrow(first, second)
 import Data.Char(digitToInt)
 import Data.List(findIndex)
-import Data.Maybe(fromJust)
 import Math.Geometry.Grid(Index, neighbours)
+import qualified Math.Geometry.GridInternal as G
 import qualified Math.Geometry.GridMap as GM (adjust, map, toList)
 import Math.Geometry.Grid.Octagonal(RectOctGrid, rectOctGrid)
 import Math.Geometry.GridMap.Lazy (lazyGridMap, LGridMap)
@@ -28,11 +28,11 @@ parser :: String -> Maybe Octopii
 parser s =
   let lls = lines s
       grid = rectOctGrid (length lls) (length (head lls))
-      elts = zip (concat (map (map digitToInt) (lls))) (repeat False)
+      elts = zip (concatMap (map digitToInt) lls) (repeat False)
   in Just $ lazyGridMap grid elts
 
 resetFlashed :: Octopii -> Octopii
-resetFlashed = GM.map (flip (,) False . fst)
+resetFlashed = GM.map ((, False) . fst)
 
 oneStep :: Octopii -> Octopii
 oneStep =
@@ -40,13 +40,16 @@ oneStep =
 
 oneStep' :: Octopii -> Octopii
 oneStep' o =
-  case filter ((\(i, b) -> i > 9 && b == False) . snd) (GM.toList o) of
+  case filter ((\(i, b) -> i > 9 && not b) . snd) (GM.toList o) of
     [] -> o
-    us -> oneStep' $ foldr oneUpdate o us
+    us -> oneStep $ foldr oneUpdate o us
+
+modifyNeighbors :: (Ord (Index a), G.Grid a) => LGridMap a b -> Index a -> (b -> b) -> LGridMap a b
+modifyNeighbors lg a f = foldr (GM.adjust f) lg (neighbours lg a)
 
 oneUpdate :: (Index RectOctGrid, (Int, Bool)) -> Octopii -> Octopii
 oneUpdate (k, _) o =
-  let oo = foldr (\n o' -> GM.adjust (first (1+)) n o') o (neighbours o k)
+  let oo = modifyNeighbors o k (first (1+)) 
   in GM.adjust (second (const True)) k oo
 
 oneStepAccum :: (Octopii, Int) -> (Octopii, Int)
@@ -59,14 +62,12 @@ day11a :: Octopii :~> Int
 day11a = MkSol
     { sParse = parser
     , sShow  = show
-    , sSolve = Just . snd . flip (!!) 100 . iterate oneStepAccum . (flip (,) 0)
+    , sSolve = Just . snd . flip (!!) 100 . iterate oneStepAccum . (, 0)
     }
 
 day11b :: Octopii :~> Int
 day11b = MkSol
     { sParse = parser
     , sShow  = show
-    -- How would I have caught the fst vs. second bug with typing?
-    -- , sSolve = findIndex (all ((==) 0 . fst . fst) . GM.toList) . iterate (resetFlashed . oneStep)
     , sSolve = findIndex (all ((==) 0 . fst . snd) . GM.toList) . iterate (resetFlashed . oneStep)
     }
