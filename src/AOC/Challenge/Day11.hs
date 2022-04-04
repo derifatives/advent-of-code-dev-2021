@@ -22,34 +22,39 @@ import qualified Math.Geometry.GridMap as GM (adjust, map, toList)
 import Math.Geometry.Grid.Octagonal(RectOctGrid, rectOctGrid)
 import Math.Geometry.GridMap.Lazy (lazyGridMap, LGridMap)
 
-type Octopii = LGridMap RectOctGrid (Int, Bool)
+
+newtype Energy = Energy Int deriving stock (Eq, Ord, Show)
+type Octopii = LGridMap RectOctGrid (Energy, Bool)
 
 parser :: String -> Maybe Octopii
 parser s =
   let lls = lines s
       grid = rectOctGrid (length lls) (length (head lls))
-      elts = zip (concatMap (map digitToInt) lls) (repeat False)
+      elts = zip (concatMap (map (Energy . digitToInt)) lls) (repeat False)
   in Just $ lazyGridMap grid elts
+
+incrementEnergy :: (Energy, Bool) -> (Energy, Bool)
+incrementEnergy (Energy e, b) = (Energy (e+1), b)
 
 resetFlashed :: Octopii -> Octopii
 resetFlashed = GM.map ((, False) . fst)
 
 oneStep :: Octopii -> Octopii
 oneStep =
-  GM.map (first (\i -> if i > 9 then 0 else i)) . oneStep' . GM.map (first (1+))
+  GM.map (first (\(Energy e) -> Energy (if e > 9 then 0 else e))) . oneStep' . GM.map incrementEnergy
 
 oneStep' :: Octopii -> Octopii
 oneStep' o =
-  case filter ((\(i, b) -> i > 9 && not b) . snd) (GM.toList o) of
+  case filter ((\(Energy e, b) -> e > 9 && not b) . snd) (GM.toList o) of
     [] -> o
-    us -> oneStep $ foldr oneUpdate o us
+    us -> oneStep' $ foldr oneUpdate o us
 
 modifyNeighbors :: (Ord (Index a), G.Grid a) => LGridMap a b -> Index a -> (b -> b) -> LGridMap a b
 modifyNeighbors lg a f = foldr (GM.adjust f) lg (neighbours lg a)
 
-oneUpdate :: (Index RectOctGrid, (Int, Bool)) -> Octopii -> Octopii
+oneUpdate :: (Index RectOctGrid, (Energy, Bool)) -> Octopii -> Octopii
 oneUpdate (k, _) o =
-  let oo = modifyNeighbors o k (first (1+)) 
+  let oo = modifyNeighbors o k incrementEnergy
   in GM.adjust (second (const True)) k oo
 
 oneStepAccum :: (Octopii, Int) -> (Octopii, Int)
@@ -69,5 +74,5 @@ day11b :: Octopii :~> Int
 day11b = MkSol
     { sParse = parser
     , sShow  = show
-    , sSolve = findIndex (all ((==) 0 . fst . snd) . GM.toList) . iterate (resetFlashed . oneStep)
+    , sSolve = findIndex (all ((==) (Energy 0) . fst . snd) . GM.toList) . iterate (resetFlashed . oneStep)
     }
