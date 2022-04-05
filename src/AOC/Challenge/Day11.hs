@@ -39,9 +39,18 @@ incrementEnergy (Energy e, b) = (Energy (e+1), b)
 resetFlashed :: Octopii -> Octopii
 resetFlashed = GM.map ((, False) . fst)
 
-oneStep :: Octopii -> Octopii
-oneStep =
-  GM.map (first (\(Energy e) -> Energy (if e > 9 then 0 else e))) . oneStep' . GM.map incrementEnergy
+resetEnergy :: Octopii -> Octopii
+resetEnergy = GM.map (first (\(Energy e) -> Energy (if e > 9 then 0 else e)))
+
+countFlashes :: Octopii -> Int
+countFlashes = length . filter (== True) . map (snd . snd) . GM.toList
+
+oneStep :: Octopii -> (Octopii, Int)
+oneStep o =
+  let incd = GM.map incrementEnergy o
+      final = oneStep' incd
+      new_flashes = countFlashes final
+  in (resetFlashed $ resetEnergy final, new_flashes)
 
 oneStep' :: Octopii -> Octopii
 oneStep' o =
@@ -59,9 +68,8 @@ oneUpdate (k, _) o =
 
 oneStepAccum :: (Octopii, Int) -> (Octopii, Int)
 oneStepAccum (oo, i) =
-  let o = oneStep oo
-      new_flashes = length $ filter (== True) $ map (snd . snd) $ GM.toList o
-  in (resetFlashed o, i + new_flashes)
+  let (o, new_flashes) = oneStep oo
+  in (o, i + new_flashes)
 
 day11a :: Octopii :~> Int
 day11a = MkSol
@@ -74,5 +82,5 @@ day11b :: Octopii :~> Int
 day11b = MkSol
     { sParse = parser
     , sShow  = show
-    , sSolve = findIndex (all ((==) (Energy 0) . fst . snd) . GM.toList) . iterate (resetFlashed . oneStep)
+    , sSolve = findIndex (all ((==) (Energy 0) . fst . snd) . GM.toList) . iterate (fst . oneStep)
     }
