@@ -45,13 +45,8 @@ resetEnergy = GM.map (first (\(Energy e) -> Energy (if e > 9 then 0 else e)))
 countFlashes :: Octopii -> Int
 countFlashes = length . filter (== True) . map (snd . snd) . GM.toList
 
-adjustM :: (Ord (Index a), G.Grid a) => (b->b) -> Index a -> State (LGridMap a b) ()
-adjustM f a = modify (GM.adjust f a)
-
 modifyNeighbors :: (Ord (Index a), G.Grid a) => (b->b) -> Index a -> State (LGridMap a b) ()
-modifyNeighbors f a = do
-  grid <- get
-  mapM_ (adjustM f) (neighbours grid a)
+modifyNeighbors f a = modify $ \g ->  foldr (GM.adjust f) g (neighbours g a)
 
 oneStep :: State Octopii Int
 oneStep = do
@@ -71,13 +66,13 @@ flashNeighborsRepeatedly = do
         put $ execState (mapM oneUpdate us) o
         flashNeighborsRepeatedly
 
-allFlashedP :: State Octopii Bool
-allFlashedP = gets (all ((==) (Energy 0) . fst . snd) . GM.toList)
-
 oneUpdate :: (Index RectOctGrid, (Energy, Bool)) -> State Octopii ()
 oneUpdate (k, _) = do
   modifyNeighbors incrementEnergy k
-  adjustM (second (const True)) k
+  modify (GM.adjust (second (const True)) k)
+
+allFlashedP :: State Octopii Bool
+allFlashedP = gets (all ((==) (Energy 0) . fst . snd) . GM.toList)
 
 day11a :: Octopii :~> Int
 day11a = MkSol
