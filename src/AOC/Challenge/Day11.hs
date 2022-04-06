@@ -23,7 +23,6 @@ import qualified Math.Geometry.GridMap as GM (adjust, map, toList)
 import Math.Geometry.Grid.Octagonal(RectOctGrid, rectOctGrid)
 import Math.Geometry.GridMap.Lazy (lazyGridMap, LGridMap)
 
-
 newtype Energy = Energy Int deriving stock (Eq, Ord, Show)
 type Octopii = LGridMap RectOctGrid (Energy, Bool)
 
@@ -72,6 +71,9 @@ flashNeighborsRepeatedly = do
         put $ execState (mapM oneUpdate us) o
         flashNeighborsRepeatedly
 
+allFlashedP :: State Octopii Bool
+allFlashedP = gets (all ((==) (Energy 0) . fst . snd) . GM.toList)
+
 oneUpdate :: (Index RectOctGrid, (Energy, Bool)) -> State Octopii ()
 oneUpdate (k, _) = do
   modifyNeighbors incrementEnergy k
@@ -84,12 +86,9 @@ day11a = MkSol
     , sSolve = Just . sum . evalState (replicateM 100 oneStep)
     }
 
-allFlashedP :: State Octopii Bool
-allFlashedP = gets (all ((==) (Energy 0) . fst . snd) . GM.toList)
-
 day11b :: Octopii :~> Int
 day11b = MkSol
     { sParse = parser
     , sShow  = show
-    , sSolve = Just . length . evalState (untilM oneStep allFlashedP )
+    , sSolve = Just . length . evalState (untilM oneStep allFlashedP)
     }
