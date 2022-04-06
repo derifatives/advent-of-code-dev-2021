@@ -14,8 +14,9 @@ module AOC.Challenge.Day11 (
 
 import AOC.Solver ((:~>)(MkSol), sParse, sShow, sSolve)
 import Control.Arrow(first, second)
+import Control.Monad.State(State, evalState, execState, get, gets, modify, put, replicateM)
+import Control.Monad.Loops(untilM)
 import Data.Char(digitToInt)
-import Data.List(findIndex)
 import Math.Geometry.Grid(Index, neighbours)
 import qualified Math.Geometry.GridInternal as G
 import qualified Math.Geometry.GridMap as GM (adjust, map, toList)
@@ -35,7 +36,7 @@ parser s =
 
 incrementEnergy :: (Energy, Bool) -> (Energy, Bool)
 incrementEnergy (Energy e, b) = (Energy (e+1), b)
-
+  
 resetFlashed :: Octopii -> Octopii
 resetFlashed = GM.map ((, False) . fst)
 
@@ -45,42 +46,50 @@ resetEnergy = GM.map (first (\(Energy e) -> Energy (if e > 9 then 0 else e)))
 countFlashes :: Octopii -> Int
 countFlashes = length . filter (== True) . map (snd . snd) . GM.toList
 
-oneStep :: Octopii -> (Octopii, Int)
-oneStep o =
-  let incd = GM.map incrementEnergy o
-      final = oneStep' incd
-      new_flashes = countFlashes final
-  in (resetFlashed $ resetEnergy final, new_flashes)
+adjustM :: (Ord (Index a), G.Grid a) => (b->b) -> Index a -> State (LGridMap a b) ()
+adjustM f a = modify (GM.adjust f a)
 
-oneStep' :: Octopii -> Octopii
-oneStep' o =
-  case filter ((\(Energy e, b) -> e > 9 && not b) . snd) (GM.toList o) of
-    [] -> o
-    us -> oneStep' $ foldr oneUpdate o us
+modifyNeighbors :: (Ord (Index a), G.Grid a) => (b->b) -> Index a -> State (LGridMap a b) ()
+modifyNeighbors f a = do
+  grid <- get
+  mapM_ (adjustM f) (neighbours grid a)
 
-modifyNeighbors :: (Ord (Index a), G.Grid a) => LGridMap a b -> Index a -> (b -> b) -> LGridMap a b
-modifyNeighbors lg a f = foldr (GM.adjust f) lg (neighbours lg a)
+oneStep :: State Octopii Int
+oneStep = do
+  modify (GM.map incrementEnergy)
+  flashNeighborsRepeatedly
+  num_flashes <- gets countFlashes
+  modify resetFlashed
+  modify resetEnergy
+  pure num_flashes
 
-oneUpdate :: (Index RectOctGrid, (Energy, Bool)) -> Octopii -> Octopii
-oneUpdate (k, _) o =
-  let oo = modifyNeighbors o k incrementEnergy
-  in GM.adjust (second (const True)) k oo
+flashNeighborsRepeatedly :: State Octopii ()
+flashNeighborsRepeatedly = do
+    o <- get
+    case filter ((\(Energy e, b) -> e > 9 && not b) . snd) (GM.toList o) of
+      [] -> pure ()
+      us -> do
+        put $ execState (mapM oneUpdate us) o
+        flashNeighborsRepeatedly
 
-oneStepAccum :: (Octopii, Int) -> (Octopii, Int)
-oneStepAccum (oo, i) =
-  let (o, new_flashes) = oneStep oo
-  in (o, i + new_flashes)
+oneUpdate :: (Index RectOctGrid, (Energy, Bool)) -> State Octopii ()
+oneUpdate (k, _) = do
+  modifyNeighbors incrementEnergy k
+  adjustM (second (const True)) k
 
 day11a :: Octopii :~> Int
 day11a = MkSol
     { sParse = parser
     , sShow  = show
-    , sSolve = Just . snd . flip (!!) 100 . iterate oneStepAccum . (, 0)
+    , sSolve = Just . sum . evalState (replicateM 100 oneStep)
     }
+
+allFlashedP :: State Octopii Bool
+allFlashedP = gets (all ((==) (Energy 0) . fst . snd) . GM.toList)
 
 day11b :: Octopii :~> Int
 day11b = MkSol
     { sParse = parser
     , sShow  = show
-    , sSolve = findIndex (all ((==) (Energy 0) . fst . snd) . GM.toList) . iterate (fst . oneStep)
+    , sSolve = Just . length . evalState (untilM oneStep allFlashedP )
     }
