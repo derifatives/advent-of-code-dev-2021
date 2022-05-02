@@ -40,12 +40,15 @@ common common-options
                      , directory
                      , filepath
                      , finite-typelits
+                     , grid
                      , haskeline
                      , haskell-names
                      , haskell-src-exts
                      , hpack
+                     , linear
                      , megaparsec
                      , microlens-th
+                     , monad-loops
                      , mtl
                      , pandoc
                      , parser-combinators
