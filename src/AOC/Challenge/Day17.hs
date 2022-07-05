@@ -1,7 +1,3 @@
-{-# OPTIONS_GHC -Wno-unused-imports   #-}
-{-# OPTIONS_GHC -Wno-unused-top-binds #-}
-
--- |
 -- Module      : AOC.Challenge.Day17
 -- License     : BSD3
 --
@@ -9,35 +5,49 @@
 -- Portability : non-portable
 --
 -- Day 17.  See "AOC.Solver" for the types used in this module!
---
--- After completing the challenge, it is recommended to:
---
--- *   Replace "AOC.Prelude" imports to specific modules (with explicit
---     imports) for readability.
--- *   Remove the @-Wno-unused-imports@ and @-Wno-unused-top-binds@
---     pragmas.
--- *   Replace the partial type signatures underscores in the solution
---     types @_ :~> _@ with the actual types of inputs and outputs of the
---     solution.  You can delete the type signatures completely and GHC
---     will recommend what should go in place of the underscores.
 
 module AOC.Challenge.Day17 (
-    -- day17a
-  -- , day17b
+  day17a
+  , day17b
   ) where
 
 import           AOC.Prelude
 
-day17a :: _ :~> _
+-- It wasn't worth writing a parser for "target area: x=253..280, y=-73..-46"
+
+sumSquaresTo :: Int -> Int
+sumSquaresTo n = (n * (n+1)) `div` 2
+
+maxHeight :: Int -> Int
+maxHeight = sumSquaresTo
+
+buildTrajectory :: ((Int, Int), (Int, Int)) -> [((Int, Int), (Int, Int))]
+buildTrajectory c@((x, y),(vx, vy)) =
+  c : buildTrajectory ((x + vx, y + vy), (max (vx - 1) 0, vy - 1))
+
+checkTrajectory :: ((Int, Int), (Int, Int)) -> [((Int, Int), (Int, Int))] -> Bool
+checkTrajectory b@((xmin, xmax), (ymin, ymax)) (((x, y), (_, _)):rest)
+  | x > xmax || y < ymin = False
+  | x >= xmin && x <= xmax && y >= ymin && y <= ymax = True
+  | otherwise              = checkTrajectory b rest
+checkTrajectory _ _ = error "Empty trajectory."
+
+countGoodTrajectories :: (((Int, Int), (Int, Int)), ((Int, Int), (Int, Int))) -> Int
+countGoodTrajectories (((vxmin, vxmax), (vymin, vymax)), bounds) =
+  let all_vs = [(vx, vy) | vx <- [vxmin..vxmax], vy <- [vymin..vymax]]
+      checker = (\vs -> checkTrajectory bounds (buildTrajectory ((0, 0), vs)))
+  in length $ filter (== True) $ map checker all_vs
+  
+day17a :: _ :~> Int
 day17a = MkSol
-    { sParse = Just
+    { sParse = Just . const (abs (-73) - 1)
     , sShow  = show
-    , sSolve = Just
+    , sSolve = Just . maxHeight
     }
 
-day17b :: _ :~> _
+day17b :: _ :~> Int
 day17b = MkSol
-    { sParse = Just
+    { sParse = Just . const (((22, 280), (-73, 73)), ((253, 280), (-73, -46)))
     , sShow  = show
-    , sSolve = Just
+    , sSolve = Just . countGoodTrajectories
     }
