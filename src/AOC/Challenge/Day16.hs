@@ -12,10 +12,9 @@ module AOC.Challenge.Day16 (
   ) where
 
 import AOC.Solver ((:~>)(MkSol), sParse, sShow, sSolve)
-import Control.Monad.State(State, get, put, evalState, runState)
+import Control.Monad.State(State, get, put, evalState)
 import Data.Char (digitToInt)
-import Data.List.Extra (snoc, splitAt, take)
-import Numeric (readHex)
+import Data.List.Extra (snoc)
 
 charToBits' :: Char -> [Int]
 charToBits' = zeroPad . toBinary . digitToInt
@@ -24,7 +23,7 @@ toBinary :: Int -> [Int]
 toBinary n = if n > 0 then toBinary (div n 2) `snoc` (mod n 2) else []
 
 zeroPad :: [Int] -> [Int]
-zeroPad is = (replicate (4 - length is) 0) ++ is
+zeroPad is = replicate (4 - length is) 0 ++ is
 
 charsToBits :: [Char] -> [Int]
 charsToBits = concatMap charToBits'
@@ -70,7 +69,7 @@ grabNBits n = do
 grabValueBits :: [Int] -> Bitstream [Int]
 grabValueBits acc = do
   block <- grabNBits 5
-  let new_acc = acc ++ (drop 1 block)
+  let new_acc = acc ++ drop 1 block
   if head block == 1
     then grabValueBits new_acc
     else pure new_acc
@@ -104,7 +103,7 @@ parsePacketContents op = do
 parseAllPackets :: [Packet] -> Bitstream [Packet]
 parseAllPackets packets = do
   bitstream <- get
-  if bitstream == []
+  if null bitstream
     then pure packets
     else do packet <- parsePacket
             parseAllPackets (packets `snoc` packet)
@@ -129,9 +128,9 @@ scorePacket (Packet _ _ (Packets op ps)) =
     Product -> product scores
     Min -> minimum scores
     Max -> maximum scores
-    Greater -> if (scores !! 0) > (scores !! 1) then 1 else 0
-    Lesser -> if (scores !! 0) < (scores !! 1) then 1 else 0
-    Equals -> if (scores !! 0) == (scores !! 1) then 1 else 0
+    Greater -> if head scores > (scores !! 1) then 1 else 0
+    Lesser -> if head scores < (scores !! 1) then 1 else 0
+    Equals -> if head scores == (scores !! 1) then 1 else 0
   
 day16a :: String :~> Int
 day16a = MkSol
