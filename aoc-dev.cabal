@@ -38,6 +38,7 @@ common common-options
                      , deepseq
                      , dependent-sum
                      , directory
+                     , extra
                      , filepath
                      , finite-typelits
                      , grid
@@ -48,6 +49,7 @@ common common-options
                      , linear
                      , megaparsec
                      , microlens-th
+                     , monad-dijkstra
                      , monad-loops
                      , mtl
                      , pandoc
