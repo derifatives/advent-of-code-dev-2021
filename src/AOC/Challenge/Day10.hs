@@ -14,6 +14,7 @@ module AOC.Challenge.Day10 (
 
 import AOC.Solver ((:~>)(MkSol), sParse, sShow, sSolve)
 import Data.List(sort)
+import Data.Maybe(fromJust, isJust, isNothing)
 
 openToClose :: [(Char, Char)]
 openToClose = [('(', ')'), ('[', ']'), ('{', '}'), ('<', '>')]
