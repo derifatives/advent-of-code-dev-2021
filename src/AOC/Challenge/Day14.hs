@@ -8,8 +8,7 @@
 -- Day 14.  See "AOC.Solver" for the types used in this module!
 
 module AOC.Challenge.Day14 (
-  parser
-  , day14a
+  day14a
   , day14b
   ) where
 
