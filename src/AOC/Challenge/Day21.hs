@@ -87,9 +87,6 @@ data NumWins = NumWins {
   player1 :: Int,
   player2 :: Int } deriving stock (Show)
 
-initialNumWins :: NumWins
-initialNumWins = NumWins { player1 = 0, player2 = 0}
-
 type Universes = M.Map GameState Int
 
 data UniverseState = UniverseState {

@@ -22,16 +22,6 @@ parser = Just . map (parseSnailfish []) . lines
        let (i, rest') = head $ readDec rest
        in parseSnailfish (I i : soFar) rest'
 
-toString :: Snailfish -> String
-toString = fst . toString'
-  where
-    toString' (L:rest) = 
-      let (n1, rest') = toString' rest
-          (n2, rest'') = toString' rest'
-      in ("[" ++ n1 ++ "," ++ n2 ++ "]", tail rest'')
-    toString' (I i:rest) = (show i, rest)
-    toString' _ = error "Unexpected parse in toString'."
-
 tryExplode :: Snailfish -> Maybe Snailfish
 tryExplode = search [] [] (0 :: Int)
   where

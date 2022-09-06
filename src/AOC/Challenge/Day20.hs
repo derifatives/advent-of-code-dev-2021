@@ -3,7 +3,7 @@ module AOC.Challenge.Day20 (
   , day20b
  ) where
 
-import           AOC.Prelude
+import AOC.Solver ((:~>)(MkSol), sParse, sShow, sSolve)
 import qualified Data.Array.Unboxed as A
 import Data.List.Split(splitOn)
 import qualified Data.Set as S
@@ -34,13 +34,6 @@ parser s =
  let lookupAndImage = splitOn "\n\n" s
  in Just (parseEnhancementString $ head lookupAndImage,
           parseImage $ lookupAndImage !! 1)
-
-boundingBox :: Image -> ((Int, Int), (Int, Int))
-boundingBox img =
- let inds = S.elems (array img)
-     rs = map fst inds
-     cs = map snd inds
- in ((minimum rs, minimum cs), (maximum rs, maximum cs))
 
 inBounds :: (Ix, Ix) -> Ix -> Bool
 inBounds ((min_r, min_c), (max_r, max_c)) (r, c) =
