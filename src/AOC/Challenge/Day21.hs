@@ -1,9 +1,5 @@
 module AOC.Challenge.Day21 (
   day21a
-  , initialUniverses
-  , updateUniverses
-  , wins
-  , simulate
   , day21b
   ) where
 
