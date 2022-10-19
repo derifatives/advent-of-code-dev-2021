@@ -6,7 +6,9 @@ module AOC.Challenge.Day22 (
 import AOC.Solver ((:~>)(MkSol), sParse, sShow, sSolve)
 import Control.Monad
 import Data.Either
-import Data.List(delete, find)
+import Data.List(foldl')
+import Data.Maybe(isJust)
+import qualified Data.MultiSet as MS
 import Data.Void
 import Text.Megaparsec
 import Text.Megaparsec.Char
@@ -19,13 +21,14 @@ data Dir = On | Off deriving stock (Eq, Show)
 data Range = Range {
   bottom :: Int,
   top :: Int
-  } deriving stock (Eq, Show)
+  } deriving stock (Eq, Ord, Show)
 
 data Cuboid = Cuboid {
-  dir :: Dir,
   x :: Range,
   y :: Range,
-  z :: Range } deriving stock (Eq, Show)
+  z :: Range } deriving stock (Eq, Ord, Show)
+
+data Instruction = Instruction Dir Cuboid deriving stock (Show)
 
 sc :: Parser ()
 sc = L.space
@@ -48,8 +51,8 @@ parseRange = do
   top <- signedInt <?> "valid int"
   return Range { bottom=bottom, top=top }
 
-parseCuboid :: Parser Cuboid
-parseCuboid = do
+parseInstruction :: Parser Instruction
+parseInstruction = do
   dir <- parseDir
   void (string " x=")
   x <- parseRange
@@ -57,90 +60,80 @@ parseCuboid = do
   y <- parseRange
   void (string ",z=")
   z <- parseRange
-  return Cuboid { dir=dir, x=x, y=y, z=z }
+  return (Instruction dir (Cuboid x y z))
 
-size :: Cuboid -> Integer
-size Cuboid{x=Range{bottom=xb, top=xt},
-            y=Range{bottom=yb, top=yt},
-            z=Range{bottom=zb, top=zt}} =
-  toInteger $ (xt - xb + 1) * (yt - yb + 1) * (zt - zb + 1)
+instructionParser :: String -> Instruction
+instructionParser s = fromRight undefined (runParser parseInstruction "" s)
+
+parser :: String -> Maybe [Instruction]
+parser = Just . map instructionParser . lines
+
+rangeSize :: Range -> Int
+rangeSize (Range b t) = t - b + 1
+
+size :: Cuboid -> Int
+size (Cuboid x y z) = product $ map rangeSize [x, y, z]
+
+rangeOverlap :: Range -> Range -> Maybe Range
+rangeOverlap Range{bottom=b1, top=t1} Range{bottom=b2, top=t2} =
+  let mb = max b1 b2
+      lt = min t1 t2
+  in if mb <= lt then Just (Range mb lt) else Nothing
 
 rangeOverlapP :: Range -> Range -> Bool
-rangeOverlapP Range{bottom=b1, top=t1} Range{bottom=b2, top=t2} =
-  (b2 <= b1 && b1 <= t2) ||
-  (b2 <= t1 && t1 <= t2) ||
-  (b1 <= b2 && b2 <= t1) ||
-  (b1 <= t2 && t2 <= t1)
+rangeOverlapP r1 r2 = isJust $ rangeOverlap r1 r2
 
 overlapP :: Cuboid -> Cuboid -> Bool
-overlapP Cuboid{x=x1, y=y1, z=z1} Cuboid{x=x2, y=y2, z=z2} =
+overlapP (Cuboid x1 y1 z1) (Cuboid x2 y2 z2) =
   rangeOverlapP x1 x2 &&
   rangeOverlapP y1 y2 &&
   rangeOverlapP z1 z2
-  
-cuboidParser :: String -> Cuboid
-cuboidParser s = fromRight undefined (runParser parseCuboid "" s)
 
-parser :: String -> Maybe [Cuboid]
-parser = Just . map cuboidParser . lines
+overlap :: Cuboid -> Cuboid -> Maybe Cuboid
+overlap (Cuboid x1 y1 z1) (Cuboid x2 y2 z2) = do
+  ox <- rangeOverlap x1 x2
+  oy <- rangeOverlap y1 y2
+  oz <- rangeOverlap z1 z2
+  return (Cuboid ox oy oz)
 
 initialRange :: Range
 initialRange = Range{bottom=(-50), top=50}
 
 initialCuboid :: Cuboid
-initialCuboid = Cuboid{dir=On, x=initialRange, y=initialRange, z=initialRange}
+initialCuboid = Cuboid{x=initialRange, y=initialRange, z=initialRange}
 
-cuboidIntersectsInitial :: Cuboid -> Bool
-cuboidIntersectsInitial = overlapP initialCuboid
+instructionIntersectsInitial :: Instruction -> Bool
+instructionIntersectsInitial (Instruction _ c) = overlapP initialCuboid c
 
-reactorSize :: [Cuboid] -> Integer
-reactorSize = sum . map size
+data ReactorState = ReactorState (MS.MultiSet Cuboid) (MS.MultiSet Cuboid)
 
-atomizeCuboids :: Cuboid -> Cuboid -> (Cuboid, ([Cuboid], [Cuboid]))
-atomizeCuboids new@Cuboid{dir=dirn, x=xn@Range{bottom=xnb, top=xnt}, y=yn@Range{bottom=ynb, top=ynt}, z=zn@Range{bottom=znb, top=znt}}
-  old@Cuboid{x=xo@Range{bottom=xob, top=xot}, y=yo@Range{bottom=yob, top=yot}, z=zo@Range{bottom=zob, top=zot}} =
-  let xv=Range{bottom=max xnb xob, top=min xnt xot}
-      yv=Range{bottom=max ynb yob, top=min ynt yot}
-      zv=Range{bottom=max znb zob, top=min znt zot}
-      overlap = Cuboid{dir=dirn, x=xv, y=yv, z=zv}
-      xLowNew = if xnb < xob then [new{x=xn{top=xob-1}}] else []
-      xLowOld = if xob < xnb then [old{x=xo{top=xnb-1}}] else []
-      xHighNew = if xot < xnt then [new{x=xn{bottom=xot+1}}] else []
-      xHighOld = if xnt < xot then [old{x=xo{bottom=xnt+1}}] else []
-      yLowNew = if ynb < yob then [new{x=xv, y=yn{top=yob-1}}] else []
-      yLowOld = if yob < ynb then [old{x=xv, y=yo{top=ynb-1}}] else []
-      yHighNew = if yot < ynt then [new{x=xv, y=yn{bottom=yot+1}}] else []
-      yHighOld = if ynt < yot then [old{x=xv, y=yo{bottom=ynt+1}}] else []
-      zLowNew = if znb < zob then [new{x=xv, y=yv, z=zn{top=zob-1}}] else []
-      zLowOld = if zob < znb then [old{x=xv, y=yv, z=zo{top=znb-1}}] else []
-      zHighNew = if zot < znt then [new{x=xv, y=yv, z=zn{bottom=zot+1}}] else []
-      zHighOld = if znt < zot then [old{x=xv, y=yv, z=zo{bottom=znt+1}}] else []
-  in (overlap,
-      (concat([xLowNew, xHighNew, yLowNew, yHighNew, zLowNew, zHighNew]),
-       concat([xLowOld, xHighOld, yLowOld, yHighOld, zLowOld, zHighOld])))
+initialReactorState :: ReactorState
+initialReactorState = ReactorState MS.empty MS.empty
 
-bootReactor :: [Cuboid] -> [Cuboid] -> [Cuboid]
-bootReactor [] rs = rs
-bootReactor (c:cs) rs =
-  let d = dir c in
-    case find (overlapP c) rs of
-      Nothing -> bootReactor cs (if d == On then (c:rs) else rs)
-      Just r ->
-        let (o, (new, old)) = atomizeCuboids c r
-            rs' = delete r rs
-            o' = if d == On then [o] else []
-        in bootReactor (new ++ cs) (old ++ o' ++ rs')
+updateReactorState :: ReactorState -> Instruction -> ReactorState
+updateReactorState (ReactorState adds subtracts) (Instruction dir cuboid) =
+  let intersector =  (\c -> overlap c cuboid)
+      addsIntersects = MS.mapMaybe intersector adds
+      subtractsIntersects = MS.mapMaybe intersector subtracts
+      newAdds = MS.union adds subtractsIntersects
+      newAdds' = if dir == On then (MS.insert cuboid newAdds) else newAdds
+      newSubtracts = MS.union subtracts addsIntersects
+  in (ReactorState newAdds' newSubtracts)
 
+reactorSize :: ReactorState -> Int
+reactorSize (ReactorState adds subtracts) =
+  sum (MS.map size adds) - sum (MS.map size subtracts)
+ 
 day22a :: _ :~> _
 day22a = MkSol
     { sParse = parser
     , sShow  = show
-    , sSolve = Just . reactorSize . (flip bootReactor) [] . filter cuboidIntersectsInitial
+    , sSolve = Just . reactorSize . foldl' updateReactorState initialReactorState . filter instructionIntersectsInitial
     }
 
 day22b :: _ :~> _
 day22b = MkSol
     { sParse = parser
     , sShow  = show
-    , sSolve = Just . reactorSize . (flip bootReactor) []
+    , sSolve = Just . reactorSize . foldl' updateReactorState initialReactorState
     }
