@@ -28,6 +28,8 @@ module AOC.Challenge.Day01 (
 
 import           AOC.Prelude
 
+-- test comment
+
 day01a :: _ :~> _
 day01a = MkSol
     { sParse = Just
