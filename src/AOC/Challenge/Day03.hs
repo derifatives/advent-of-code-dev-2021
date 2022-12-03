@@ -1,6 +1,3 @@
-{-# OPTIONS_GHC -Wno-unused-imports   #-}
-{-# OPTIONS_GHC -Wno-unused-top-binds #-}
-
 -- |
 -- Module      : AOC.Challenge.Day03
 -- License     : BSD3
@@ -9,35 +6,43 @@
 -- Portability : non-portable
 --
 -- Day 3.  See "AOC.Solver" for the types used in this module!
---
--- After completing the challenge, it is recommended to:
---
--- *   Replace "AOC.Prelude" imports to specific modules (with explicit
---     imports) for readability.
--- *   Remove the @-Wno-unused-imports@ and @-Wno-unused-top-binds@
---     pragmas.
--- *   Replace the partial type signatures underscores in the solution
---     types @_ :~> _@ with the actual types of inputs and outputs of the
---     solution.  You can delete the type signatures completely and GHC
---     will recommend what should go in place of the underscores.
 
 module AOC.Challenge.Day03 (
-    -- day03a
-  -- , day03b
+  day03a
+  , day03b
   ) where
 
-import           AOC.Prelude
+import AOC.Solver ((:~>)(MkSol), sParse, sShow, sSolve)
+import Data.List.Split (chunksOf)
+import qualified Data.Set as S
 
-day03a :: _ :~> _
+priority :: Char -> Int
+priority c
+  | 'a' <= c && c <= 'z' = fromEnum c - fromEnum 'a' + 1
+  | 'A' <= c && c <= 'Z' = fromEnum c - fromEnum 'A' + 27
+  | otherwise            = undefined
+
+firstElt :: S.Set a -> a
+firstElt = head . S.toList
+
+findIntersection :: String -> Char
+findIntersection s =
+  let (l, r) = splitAt (length s `div` 2) s
+  in firstElt $ S.intersection (S.fromList l) (S.fromList r)
+
+findGroupIntersection :: [String] -> Char
+findGroupIntersection bs = firstElt $ foldr1 S.intersection (map S.fromList bs)
+
+day03a :: [String] :~> Int
 day03a = MkSol
-    { sParse = Just
+    { sParse = Just . lines
     , sShow  = show
-    , sSolve = Just
+    , sSolve = Just . sum . map (priority . findIntersection)
     }
 
-day03b :: _ :~> _
+day03b :: [String] :~> Int
 day03b = MkSol
-    { sParse = Just
+    { sParse = Just . lines
     , sShow  = show
-    , sSolve = Just
+    , sSolve = Just . sum . map (priority . findGroupIntersection) . chunksOf 3
     }
