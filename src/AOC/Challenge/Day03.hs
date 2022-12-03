@@ -33,7 +33,7 @@ findIntersection :: String -> Char
 findIntersection = firstElt . uncurry S.intersection . both S.fromList . halves
 
 findGroupIntersection :: [String] -> Char
-findGroupIntersection bs = firstElt $ foldr1 S.intersection $ map S.fromList bs
+findGroupIntersection = firstElt . foldr1 S.intersection . map S.fromList
 
 day03a :: [String] :~> Int
 day03a = MkSol
