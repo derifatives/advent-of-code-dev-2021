@@ -15,7 +15,6 @@ module AOC.Challenge.Day03 (
 import AOC.Solver ((:~>)(MkSol), sParse, sShow, sSolve)
 import Data.List (intersect)
 import Data.List.Split (chunksOf)
-import Data.Tuple.Extra (both)
 
 priority :: Char -> Int
 priority c
