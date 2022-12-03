@@ -14,6 +14,7 @@ module AOC.Challenge.Day03 (
 
 import AOC.Solver ((:~>)(MkSol), sParse, sShow, sSolve)
 import Data.List.Split (chunksOf)
+import Data.Tuple.Extra (both)
 import qualified Data.Set as S
 
 priority :: Char -> Int
@@ -25,13 +26,14 @@ priority c
 firstElt :: S.Set a -> a
 firstElt = head . S.toList
 
+halves :: [a] -> ([a], [a])
+halves s = splitAt (length s `div` 2) s 
+
 findIntersection :: String -> Char
-findIntersection s =
-  let (l, r) = splitAt (length s `div` 2) s
-  in firstElt $ S.intersection (S.fromList l) (S.fromList r)
+findIntersection = firstElt . uncurry S.intersection . both S.fromList . halves
 
 findGroupIntersection :: [String] -> Char
-findGroupIntersection bs = firstElt $ foldr1 S.intersection (map S.fromList bs)
+findGroupIntersection bs = firstElt $ foldr1 S.intersection $ map S.fromList bs
 
 day03a :: [String] :~> Int
 day03a = MkSol
