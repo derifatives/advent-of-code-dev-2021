@@ -1,6 +1,3 @@
-{-# OPTIONS_GHC -Wno-unused-imports   #-}
-{-# OPTIONS_GHC -Wno-unused-top-binds #-}
-
 -- |
 -- Module      : AOC.Challenge.Day04
 -- License     : BSD3
@@ -9,35 +6,41 @@
 -- Portability : non-portable
 --
 -- Day 4.  See "AOC.Solver" for the types used in this module!
---
--- After completing the challenge, it is recommended to:
---
--- *   Replace "AOC.Prelude" imports to specific modules (with explicit
---     imports) for readability.
--- *   Remove the @-Wno-unused-imports@ and @-Wno-unused-top-binds@
---     pragmas.
--- *   Replace the partial type signatures underscores in the solution
---     types @_ :~> _@ with the actual types of inputs and outputs of the
---     solution.  You can delete the type signatures completely and GHC
---     will recommend what should go in place of the underscores.
 
 module AOC.Challenge.Day04 (
-    -- day04a
-  -- , day04b
+  day04a
+  , day04b
   ) where
 
-import           AOC.Prelude
+import AOC.Solver ((:~>)(MkSol), sParse, sShow, sSolve)
+import Data.List.Split (splitOn)
 
-day04a :: _ :~> _
+type TwoRanges = ((Int, Int), (Int, Int))
+
+firstTwo :: [x] -> (x, x)
+firstTwo xs = (xs !! 0, xs !! 1)
+
+parser :: String -> Maybe [TwoRanges]
+parser = Just . map (firstTwo . map parseRange . splitOn ",") . lines
+  where parseRange = firstTwo . map read . splitOn "-"
+          
+oneContainsOther :: TwoRanges -> Bool
+oneContainsOther ((b1, t1), (b2, t2)) =
+  (b1 <= b2 && t2 <= t1) || (b2 <= b1 && t1 <= t2)
+
+overlaps :: TwoRanges -> Bool
+overlaps ((b1, t1), (b2, t2)) = (max b1 b2) <= (min t1 t2)
+  
+day04a :: [TwoRanges] :~> Int
 day04a = MkSol
-    { sParse = Just
+    { sParse = parser
     , sShow  = show
-    , sSolve = Just
+    , sSolve = Just . sum . map (fromEnum . oneContainsOther)
     }
 
-day04b :: _ :~> _
+day04b :: [TwoRanges] :~> Int
 day04b = MkSol
-    { sParse = Just
+    { sParse = parser
     , sShow  = show
-    , sSolve = Just
+    , sSolve = Just . sum . map (fromEnum . overlaps)
     }
