@@ -39,7 +39,6 @@ addRayToVisible f o heightToBeat p visible =
       then addRayToVisible f o height (p + o) (S.insert p visible)
       else addRayToVisible f o heightToBeat (p + o) visible
 
-
 addDirectionToVisible :: Forest -> (Ind, [Ind]) -> Visible -> Visible
 addDirectionToVisible forest (offset, starts) visible =
   foldr (addRayToVisible forest offset (-1)) visible starts
