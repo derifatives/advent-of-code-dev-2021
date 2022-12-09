@@ -21,7 +21,6 @@ type Pos = V2 Int
 type Offset = V2 Int
 type Visited = S.Set Pos
 
--- data Rope = Rope Pos Pos deriving stock (Show)
 type Rope = [Pos]
 
 wordToOffset :: String -> Offset
