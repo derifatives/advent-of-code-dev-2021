@@ -1,5 +1,3 @@
-{-# HLINT ignore "Use head" #-}
-
 -- |
 -- Module      : AOC.Challenge.Day18
 -- License     : BSD3
@@ -18,8 +16,6 @@ import AOC.Solver ((:~>)(MkSol), sParse, sShow, sSolve)
 import Data.List.Split (splitOn)
 import qualified Data.Set as S
 import Linear.V3
-import qualified Data.Map as M
-import Data.Map.Strict (insertWith)
 
 type Cube = V3 Int
 type Lava = S.Set Cube
@@ -50,9 +46,6 @@ boundingBox lava =
 inBox :: Box -> Cube -> Bool
 inBox (V3 xl yl zl, V3 xh yh zh) (V3 x y z) =
   xl <= x && x <= xh && yl <= y && y <= yh && zl <= z && z <= zh
-
-type Queue a = M.Map Int [a]
-type Pq = Queue Cube
 
 exteriorP :: Lava -> Box -> Found -> [Cube] -> Bool
 exteriorP l b f q =
